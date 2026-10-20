@@ -2,7 +2,7 @@ name: Update prices and publish
 
 on:
   schedule:
-    - cron: '7,37 13-20 * * 1-5'   # every 30 min while US markets are open (times are UTC)
+    - cron: '7,37 13-21 * * 1-5'   # every 30 min while US markets are open, summer and winter time (times are UTC)
     - cron: '45 21 * * 1-5'        # after the US close: full refresh of every symbol
   push:
     branches: [main]
