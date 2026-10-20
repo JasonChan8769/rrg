@@ -316,6 +316,16 @@ def main():
         with open(os.path.join(a.out, 'data', name), 'w') as f:
             json.dump(obj, f, separators=(',', ':'), allow_nan=False)
         log(f'wrote data/{name} ({os.path.getsize(os.path.join(a.out, "data", name)) // 1024} KB)')
+    # one-line summary on the run's page in the Actions tab
+    lasts = [r.get('last') for r in info.values() if r.get('last')]
+    latest = max(set(lasts), key=lasts.count) if lasts else '-'
+    srcs = {k: sum(1 for r in info.values() if r.get('src') == k and r['status'] == 'ok') for k in ('yahoo', 'stooq')}
+    print(f'::notice title=Price update::{ok}/{len(syms)} symbols OK ({counts["quick"]} quick, {counts["full"]} full; '
+          f'Yahoo {srcs["yahoo"]}, Stooq {srcs["stooq"]}); latest bar {latest}; previous data '
+          f'{"found" if prev_d else "not found"}', flush=True)
+    bad = [f'{s} ({r["status"]}: {r.get("error", "")[:60]})' for s, r in info.items() if r['status'] != 'ok']
+    if bad:
+        print('::warning title=Symbols without fresh prices::' + '; '.join(bad)[:900], flush=True)
     if ok == 0:
         sys.exit(1)
 
