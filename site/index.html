@@ -1,0 +1,1238 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>RRG · Relative Rotation Graph</title>
+<meta name="description" content="Relative Rotation Graph for sector, industry and country ETFs, with playback.">
+<meta name="theme-color" content="#f2f4f7" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0e1319" media="(prefers-color-scheme: dark)">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="RRG">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+Condensed:wght@500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* Layout: one working column like the StockCharts RRG: toolbar, the rotation chart with its date timeline, then the symbol table. Stacks on phones. */
+:root {
+  --bg: #f2f4f7;
+  --surface: #ffffff;
+  --surface-2: #eceff4;
+  --fg: #17212d;
+  --muted: #5a6676;
+  --line: #d6dce4;
+  --line-strong: #8e9aa8;
+  --grid: rgba(23, 33, 45, .08);
+  --accent: #1b5bc2;
+  --accent-soft: #e3ecfb;
+  --accent-fg: #ffffff;
+  --focus: #1b5bc2;
+
+  /* quadrant colours follow the RRG convention */
+  --lead: #2c8a43;   --lead-bg: #e1f1e2;
+  --weak: #a07400;   --weak-bg: #fbf1cf;
+  --lag: #c0392d;    --lag-bg: #fbe2df;
+  --imp: #2a61b5;    --imp-bg: #e0e9f8;
+
+  --warn-bg: #fff3d1; --warn-fg: #6a4b00;
+  --err-bg: #fde6e3;  --err-fg: #8a2219;
+  --ok: #2c8a43;
+
+  /* series palette (tails) */
+  --s0: #1d4ed8; --s1: #b91c1c; --s2: #15803d; --s3: #b45309; --s4: #7e22ce; --s5: #0e7490; --s6: #be185d;
+  --s7: #4d7c0f; --s8: #c2410c; --s9: #4338ca; --s10: #0f766e; --s11: #854d0e; --s12: #a21caf; --s13: #44403c;
+
+  --f-ui: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --f-label: "IBM Plex Sans Condensed", "Arial Narrow", "IBM Plex Sans", system-ui, sans-serif;
+  --f-num: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+
+  --r: 8px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0e1319; --surface: #151c25; --surface-2: #1c2531; --fg: #e5e9ef; --muted: #95a1b1; --line: #29323e; --line-strong: #6d7988;
+    --grid: rgba(229, 233, 239, .07); --accent: #6ea0f2; --accent-soft: #1b2a42; --accent-fg: #0b1320; --focus: #8db6f7;
+    --lead: #5fc173; --lead-bg: #142a1b; --weak: #e0b43c; --weak-bg: #2c2610; --lag: #f07a6f; --lag-bg: #331818; --imp: #74a3ef; --imp-bg: #13233b;
+    --warn-bg: #33290d; --warn-fg: #f1d07a; --err-bg: #3a1714; --err-fg: #f6aaa2; --ok: #5fc173;
+    --s0: #60a5fa; --s1: #f87171; --s2: #4ade80; --s3: #fbbf24; --s4: #c084fc; --s5: #22d3ee; --s6: #f472b6;
+    --s7: #a3e635; --s8: #fb923c; --s9: #a5b4fc; --s10: #5eead4; --s11: #fde047; --s12: #e879f9; --s13: #d6d3d1;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0e1319; --surface: #151c25; --surface-2: #1c2531; --fg: #e5e9ef; --muted: #95a1b1; --line: #29323e; --line-strong: #6d7988;
+  --grid: rgba(229, 233, 239, .07); --accent: #6ea0f2; --accent-soft: #1b2a42; --accent-fg: #0b1320; --focus: #8db6f7;
+  --lead: #5fc173; --lead-bg: #142a1b; --weak: #e0b43c; --weak-bg: #2c2610; --lag: #f07a6f; --lag-bg: #331818; --imp: #74a3ef; --imp-bg: #13233b;
+  --warn-bg: #33290d; --warn-fg: #f1d07a; --err-bg: #3a1714; --err-fg: #f6aaa2; --ok: #5fc173;
+  --s0: #60a5fa; --s1: #f87171; --s2: #4ade80; --s3: #fbbf24; --s4: #c084fc; --s5: #22d3ee; --s6: #f472b6;
+  --s7: #a3e635; --s8: #fb923c; --s9: #a5b4fc; --s10: #5eead4; --s11: #fde047; --s12: #e879f9; --s13: #d6d3d1;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html { -webkit-text-size-adjust: 100%; }
+body { margin: 0; background: var(--bg); color: var(--fg); font-family: var(--f-ui); font-size: 14px; line-height: 1.45; }
+.app { max-width: 1180px; margin: 0 auto; padding: 20px 16px 40px; display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; }
+.app > * { min-width: 0; }
+@supports (padding: max(0px)) { .app { padding-left: max(16px, env(safe-area-inset-left)); padding-right: max(16px, env(safe-area-inset-right)); padding-bottom: max(40px, env(safe-area-inset-bottom)); } }
+a.btn { text-decoration: none; }
+footer a { color: inherit; }
+
+button, input, select { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+
+/* header */
+.top { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 10px 20px; }
+.brand { min-width: 0; }
+.eyebrow { font-family: var(--f-label); font-weight: 600; font-size: 12px; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
+h1 { margin: 2px 0 0; font-family: var(--f-label); font-weight: 600; font-size: clamp(22px, 3.2vw, 30px); letter-spacing: -.005em; line-height: 1.1; text-wrap: balance; }
+.sub { margin: 4px 0 0; color: var(--muted); }
+.sub b { color: var(--fg); font-weight: 600; }
+.status { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; color: var(--muted); }
+.pill { display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px; border-radius: 999px; font-size: 12px; font-weight: 600; letter-spacing: .02em; background: var(--surface-2); color: var(--muted); white-space: nowrap; }
+.pill .dot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+.pill.live { color: var(--ok); background: var(--lead-bg); }
+.pill.example { color: var(--warn-fg); background: var(--warn-bg); }
+.pill.loading { color: var(--accent); background: var(--accent-soft); }
+.pill.loading .dot { animation: pulse 1s ease-in-out infinite; }
+@keyframes pulse { 50% { opacity: .25; } }
+
+/* toolbar */
+.toolbar { display: flex; flex-wrap: wrap; gap: 10px 18px; align-items: flex-end; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 12px 14px; }
+.field { display: grid; gap: 4px; min-width: 0; }
+.field > span, .lbl { font-size: 11px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.ctl { height: 34px; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); padding: 0 10px; }
+.ctl:hover { border-color: var(--line-strong); }
+select.ctl { padding-right: 28px; max-width: 240px; }
+#benchmark { width: 96px; text-transform: uppercase; font-family: var(--f-num); }
+.row { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+.btn { height: 34px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 0 12px; border-radius: 6px; border: 1px solid var(--line); background: var(--surface); cursor: pointer; white-space: nowrap; }
+.btn:hover { border-color: var(--line-strong); background: var(--surface-2); }
+.btn:disabled { opacity: .5; cursor: default; }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-fg); font-weight: 600; }
+.btn.primary:hover { filter: brightness(1.06); background: var(--accent); }
+.btn.icon { width: 34px; padding: 0; }
+.btn.small { height: 28px; padding: 0 9px; font-size: 12px; }
+.btn.danger { color: var(--lag); }
+.btn svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; height: 34px; }
+.seg button { border: 0; background: var(--surface); padding: 0 14px; cursor: pointer; }
+.seg button + button { border-left: 1px solid var(--line); }
+.seg button[aria-pressed="true"] { background: var(--accent); color: var(--accent-fg); font-weight: 600; }
+.tailctl { display: flex; align-items: center; gap: 8px; height: 34px; }
+.tailctl input[type=range] { width: 120px; accent-color: var(--accent); }
+.num { font-family: var(--f-num); font-variant-numeric: tabular-nums; }
+.tailval { min-width: 4.5ch; font-size: 13px; }
+.spacer { flex: 1 1 0; }
+
+/* banner */
+.banner { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; padding: 10px 14px; border-radius: var(--r); background: var(--warn-bg); color: var(--warn-fg); font-size: 13.5px; }
+.banner.err { background: var(--err-bg); color: var(--err-fg); }
+.banner p { margin: 0; flex: 1 1 280px; min-width: 0; }
+.banner .btn { background: transparent; border-color: currentColor; color: inherit; height: 30px; }
+
+/* chart */
+.chart-card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); overflow: hidden; }
+.chart-wrap { position: relative; }
+#chart { display: block; width: 100%; height: auto; touch-action: manipulation; user-select: none; -webkit-user-select: none; }
+#chart text { font-family: var(--f-ui); }
+.tip { position: absolute; z-index: 3; pointer-events: none; background: var(--surface); color: var(--fg); border: 1px solid var(--line); border-radius: 6px; padding: 8px 10px; font-size: 12.5px; box-shadow: 0 6px 20px rgba(0,0,0,.14); min-width: 170px; max-width: 260px; }
+.tip .t-sym { font-weight: 600; display: flex; align-items: center; gap: 6px; }
+.tip .t-name { color: var(--muted); font-weight: 400; }
+.tip .t-date { color: var(--muted); font-size: 12px; margin: 2px 0 6px; }
+.tip dl { margin: 0; display: grid; grid-template-columns: auto auto; gap: 2px 12px; }
+.tip dt { color: var(--muted); }
+.tip dd { margin: 0; text-align: right; font-family: var(--f-num); font-variant-numeric: tabular-nums; }
+.overlay { position: absolute; inset: 0; display: grid; place-items: center; background: color-mix(in srgb, var(--surface) 55%, transparent); z-index: 2; }
+.overlay > div { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 10px 16px; font-weight: 500; display: flex; align-items: center; gap: 10px; box-shadow: 0 6px 20px rgba(0,0,0,.10); }
+.spin { width: 14px; height: 14px; border-radius: 50%; border: 2px solid var(--accent-soft); border-top-color: var(--accent); animation: spin .8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.timeline { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; padding: 10px 14px 12px; border-top: 1px solid var(--line); }
+.timeline .row { gap: 4px; }
+.timeline input[type=range] { flex: 1 1 260px; min-width: 0; accent-color: var(--accent); }
+.datebox { display: grid; min-width: 0; }
+.datebox .lbl { font-size: 10.5px; }
+.datebox strong { font-family: var(--f-num); font-size: 13.5px; font-weight: 500; white-space: nowrap; }
+
+/* table */
+.table-card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); }
+.table-head { display: flex; flex-wrap: wrap; gap: 10px 14px; align-items: center; padding: 12px 14px; border-bottom: 1px solid var(--line); }
+.adder { position: relative; flex: 1 1 280px; min-width: 0; max-width: 460px; }
+.adder input { width: 100%; }
+.sugg { position: absolute; left: 0; right: 0; top: calc(100% + 4px); z-index: 5; margin: 0; padding: 4px; list-style: none; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; box-shadow: 0 10px 28px rgba(0,0,0,.16); max-height: 300px; overflow-y: auto; }
+.sugg li { display: grid; grid-template-columns: 8ch 1fr auto; gap: 10px; align-items: baseline; padding: 7px 8px; border-radius: 5px; cursor: pointer; }
+.sugg li[aria-selected="true"], .sugg li:hover { background: var(--accent-soft); }
+.sugg .s-t { font-family: var(--f-num); font-weight: 500; }
+.sugg .s-d { color: var(--fg); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+.sugg .s-x { color: var(--muted); font-size: 11.5px; }
+.sugg .s-note { display: block; padding: 7px 8px; color: var(--muted); cursor: default; }
+.count { color: var(--muted); font-size: 12.5px; }
+.table-scroll { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+th, td { padding: 7px 10px; text-align: left; white-space: nowrap; border-bottom: 1px solid var(--line); }
+th { font-size: 11px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); background: var(--surface); position: sticky; top: 0; }
+th button { all: unset; cursor: pointer; display: inline-flex; gap: 4px; align-items: center; }
+th button:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+th.r, td.r { text-align: right; }
+td.r { font-family: var(--f-num); font-variant-numeric: tabular-nums; }
+tbody tr { cursor: pointer; }
+tbody tr:hover td { background: var(--surface-2); }
+tbody tr.hl td { background: var(--accent-soft); }
+tbody tr.off td:not(:first-child) { opacity: .45; }
+tbody tr:last-child td { border-bottom: 0; }
+.sym { display: inline-flex; align-items: center; gap: 8px; font-family: var(--f-num); font-weight: 500; }
+.swatch { width: 12px; height: 12px; border-radius: 50%; flex: none; }
+.name { color: var(--muted); max-width: 26ch; overflow: hidden; text-overflow: ellipsis; }
+.chk { width: 16px; height: 16px; accent-color: var(--accent); cursor: pointer; }
+.q { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 11.5px; font-weight: 600; }
+.q.Leading { color: var(--lead); background: var(--lead-bg); }
+.q.Weakening { color: var(--weak); background: var(--weak-bg); }
+.q.Lagging { color: var(--lag); background: var(--lag-bg); }
+.q.Improving { color: var(--imp); background: var(--imp-bg); }
+.up { color: var(--lead); } .down { color: var(--lag); }
+.hd { display: inline-flex; align-items: center; gap: 6px; justify-content: flex-end; }
+.hd svg { width: 14px; height: 14px; }
+.rowerr { color: var(--lag); font-family: var(--f-ui); font-size: 12px; }
+.x { all: unset; cursor: pointer; width: 26px; height: 26px; display: inline-grid; place-items: center; border-radius: 5px; color: var(--muted); }
+.x:hover { background: var(--err-bg); color: var(--lag); }
+.x:focus-visible { outline: 2px solid var(--focus); }
+.x svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
+.empty { padding: 28px 14px; text-align: center; color: var(--muted); }
+
+.about { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 0 14px; }
+.about summary { cursor: pointer; padding: 12px 0; font-weight: 600; }
+.about .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px 24px; padding-bottom: 14px; }
+.about h3 { margin: 0 0 4px; font-family: var(--f-label); font-size: 15px; }
+.about p { margin: 0; color: var(--muted); max-width: 65ch; }
+.about code { font-family: var(--f-num); font-size: 12.5px; color: var(--fg); }
+.qdot { display: inline-block; width: 9px; height: 9px; border-radius: 2px; margin-right: 6px; vertical-align: 0; }
+footer { color: var(--muted); font-size: 12px; text-align: center; }
+
+@media (max-width: 640px) {
+  .app { padding-top: 14px; gap: 12px; }
+  .toolbar { gap: 10px 12px; }
+  .tailctl input[type=range] { width: 96px; }
+  select.ctl { max-width: 190px; }
+  .hide-sm { display: none; }
+  th, td { padding: 7px 8px; }
+  /* phone: the ticker column stays put while the numbers swipe sideways */
+  th:nth-child(2), td:nth-child(2):not(.empty) { position: sticky; left: 0; background: var(--surface); box-shadow: inset -1px 0 0 var(--line); }
+  th:nth-child(2) { z-index: 2; }
+  td:nth-child(2):not(.empty) { z-index: 1; }
+  tbody tr:hover td:nth-child(2) { background: var(--surface-2); }
+  tbody tr.hl td:nth-child(2) { background: var(--accent-soft); }
+  tbody tr.off td:nth-child(2) { opacity: 1; }
+  tbody tr.off td:nth-child(2) .sym { opacity: .45; }
+}
+@media (pointer: coarse) {
+  .chk { width: 22px; height: 22px; }
+  .x { width: 36px; height: 36px; }
+  .btn.small { height: 34px; padding: 0 12px; }
+  .tailctl input[type=range] { height: 28px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .pill.loading .dot, .spin { animation: none; }
+}
+</style>
+
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <div class="brand">
+      <div class="eyebrow">Relative Rotation Graph</div>
+      <h1 id="title">S&amp;P 500 Sectors</h1>
+      <p class="sub" id="sub">JdK RS-Ratio vs RS-Momentum, measured against <b>SPY</b></p>
+    </div>
+    <div class="status" id="status"></div>
+  </header>
+
+  <section class="toolbar" aria-label="Chart settings">
+    <div class="field">
+      <span id="groupLbl">Group</span>
+      <div class="row" id="groupRow">
+        <select id="group" class="ctl" aria-labelledby="groupLbl"></select>
+        <input id="groupName" class="ctl" type="text" maxlength="40" aria-label="Group name" hidden>
+        <button class="btn small" id="renameBtn" type="button">Rename</button>
+        <button class="btn small" id="newBtn" type="button">New</button>
+        <button class="btn small danger" id="delBtn" type="button">Delete</button>
+      </div>
+    </div>
+    <label class="field">
+      <span>Benchmark</span>
+      <input id="benchmark" class="ctl" type="text" spellcheck="false" autocomplete="off" maxlength="24" value="SPY">
+    </label>
+    <div class="field">
+      <span id="tfLbl">Period</span>
+      <div class="seg" role="group" aria-labelledby="tfLbl">
+        <button type="button" id="tfD" aria-pressed="false">Daily</button>
+        <button type="button" id="tfW" aria-pressed="true">Weekly</button>
+      </div>
+    </div>
+    <div class="field">
+      <span><label for="tail">Tail length</label></span>
+      <div class="tailctl">
+        <input id="tail" type="range" min="1" max="30" value="5">
+        <span class="num tailval" id="tailVal">10 wk</span>
+      </div>
+    </div>
+    <div class="spacer"></div>
+    <button class="btn primary" id="refreshBtn" type="button">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg>
+      Refresh
+    </button>
+  </section>
+
+  <div id="banner" class="banner" role="status" hidden></div>
+
+  <section class="chart-card" aria-label="Rotation chart">
+    <div class="chart-wrap" id="chartWrap">
+      <svg id="chart" role="img" aria-label="Relative rotation graph"></svg>
+      <div id="tip" class="tip" hidden></div>
+      <div id="overlay" class="overlay" hidden><div><span class="spin"></span><span id="overlayText">Loading prices…</span></div></div>
+    </div>
+    <div class="timeline">
+      <div class="row">
+        <button class="btn icon" id="firstBtn" type="button" aria-label="Go to earliest date"><svg viewBox="0 0 24 24"><path d="M6 5v14"/><path d="M18 6l-8 6 8 6z"/></svg></button>
+        <button class="btn icon" id="backBtn" type="button" aria-label="Step back one period"><svg viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></svg></button>
+        <button class="btn icon" id="playBtn" type="button" aria-label="Play rotation"><svg viewBox="0 0 24 24" id="playIcon"><path d="M8 5l11 7-11 7z"/></svg></button>
+        <button class="btn icon" id="fwdBtn" type="button" aria-label="Step forward one period"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></button>
+        <button class="btn icon" id="lastBtn" type="button" aria-label="Go to latest date"><svg viewBox="0 0 24 24"><path d="M18 5v14"/><path d="M6 6l8 6-8 6z"/></svg></button>
+      </div>
+      <input id="date" type="range" min="0" max="0" value="0" aria-label="Chart end date">
+      <div class="datebox"><span class="lbl">Showing</span><strong id="dateLbl">–</strong></div>
+    </div>
+  </section>
+
+  <section class="table-card" aria-label="Symbols">
+    <div class="table-head">
+      <div class="adder">
+        <input id="addSym" class="ctl" type="text" spellcheck="false" autocomplete="off" placeholder="Add ETF: ticker or name, e.g. SMH, XBI, KRE" aria-label="Add a symbol" aria-autocomplete="list" aria-controls="sugg" aria-expanded="false" role="combobox">
+        <ul id="sugg" class="sugg" role="listbox" hidden></ul>
+      </div>
+      <div class="row">
+        <button class="btn small" id="showAll" type="button">Show all</button>
+        <button class="btn small" id="hideAll" type="button">Hide all</button>
+      </div>
+      <span class="spacer"></span>
+      <span class="count" id="count"></span>
+    </div>
+    <div class="table-scroll">
+      <table id="tbl">
+        <thead>
+          <tr>
+            <th aria-label="Visible"></th>
+            <th><button type="button" data-sort="sym">Symbol</button></th>
+            <th class="hide-sm"><button type="button" data-sort="name">Name</button></th>
+            <th class="r"><button type="button" data-sort="price">Price</button></th>
+            <th class="r"><button type="button" data-sort="chg">Chg %</button></th>
+            <th class="r"><button type="button" data-sort="ratio">RS-Ratio</button></th>
+            <th class="r"><button type="button" data-sort="mom">RS-Mom</button></th>
+            <th><button type="button" data-sort="quad">Quadrant</button></th>
+            <th class="r"><button type="button" data-sort="head">Heading</button></th>
+            <th aria-label="Remove"></th>
+          </tr>
+        </thead>
+        <tbody id="rows"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <details class="about" id="about">
+    <summary>How to read the graph</summary>
+    <div class="grid">
+      <div>
+        <h3><span class="qdot" style="background:var(--lead)"></span>Leading</h3>
+        <p>Stronger than the benchmark and still gaining. RS-Ratio and RS-Momentum both above 100.</p>
+      </div>
+      <div>
+        <h3><span class="qdot" style="background:var(--weak)"></span>Weakening</h3>
+        <p>Still stronger than the benchmark, but relative momentum is fading. Often the next stop after Leading.</p>
+      </div>
+      <div>
+        <h3><span class="qdot" style="background:var(--lag)"></span>Lagging</h3>
+        <p>Weaker than the benchmark and still losing ground. Both readings below 100.</p>
+      </div>
+      <div>
+        <h3><span class="qdot" style="background:var(--imp)"></span>Improving</h3>
+        <p>Still weaker than the benchmark, but relative momentum has turned up. Watch for a move into Leading.</p>
+      </div>
+      <div>
+        <h3>Rotation and heading</h3>
+        <p>Tails normally rotate clockwise. Heading is the direction of the last step: 0–90° (up and to the right) is the strongest direction, 180–270° the weakest. Long tails mean strong moves.</p>
+      </div>
+      <div>
+        <h3>Prices and updates</h3>
+        <p>Daily closes from Yahoo Finance, refreshed about every 30 minutes during US trading hours (9:30–16:00 New York) and again after the close. Weekly bars run Monday to Friday; the current week moves as it trades. To add a ticker that isn’t listed, add it to <span id="tickersRef">tickers.txt in the app’s GitHub project</span>.</p>
+      </div>
+      <div>
+        <h3>The calculation</h3>
+        <p>RS = price ÷ benchmark. <code>RS-Ratio = 100 × SMA(RS, 10) ÷ SMA(RS, 30)</code> and <code>RS-Momentum = 100 × RS-Ratio ÷ SMA(RS-Ratio, 9)</code>. Given the same prices, this reproduces StockCharts’ RRG values to the second decimal. Prices here are not adjusted for dividends, so high-yield ETFs such as XLE or XLU can read a few tenths away from StockCharts.</p>
+      </div>
+    </div>
+  </details>
+  <footer id="foot">Prices: Yahoo Finance daily closes, delayed. Not investment advice.</footer>
+</div>
+
+<script>
+(() => {
+'use strict';
+
+/* ───────────────────────── constants ───────────────────────── */
+const STORE_KEY = 'rrg.v1';
+const MAX_SYMBOLS = 40;
+const RATIO_FAST = 10, RATIO_SLOW = 30, MOM_LEN = 9;
+const COUNT = { W: 300, D: 450 };
+const PALETTE = 14;
+const NAMES = {
+  SPY:'S&P 500', XLK:'Technology', XLC:'Communication Services', XLY:'Consumer Discretionary', XLF:'Financials', XLI:'Industrials',
+  XLE:'Energy', XLB:'Materials', XLV:'Health Care', XLP:'Consumer Staples', XLU:'Utilities', XLRE:'Real Estate',
+  SMH:'Semiconductors', SOXX:'Semiconductors', XSD:'Semiconductors (equal wt)', IGV:'Software', XSW:'Software (equal wt)', CIBR:'Cybersecurity', HACK:'Cybersecurity',
+  SKYY:'Cloud Computing', FDN:'Internet', XBI:'Biotech (equal wt)', IBB:'Biotech', IHI:'Medical Devices', XPH:'Pharmaceuticals', XHE:'Health Care Equipment',
+  KRE:'Regional Banks', KBE:'Banks', IAI:'Broker-Dealers', KIE:'Insurance', ITB:'Home Construction', XHB:'Homebuilders', XRT:'Retail',
+  IYT:'Transportation', XTN:'Transportation (equal wt)', JETS:'Airlines', ITA:'Aerospace & Defense', XAR:'Aerospace & Defense (equal wt)', PAVE:'Infrastructure',
+  XME:'Metals & Mining', GDX:'Gold Miners', GDXJ:'Junior Gold Miners', COPX:'Copper Miners', URA:'Uranium', LIT:'Lithium & Battery', XOP:'Oil & Gas E&P', OIH:'Oil Services',
+  TAN:'Solar', ICLN:'Clean Energy', MOO:'Agribusiness', BOTZ:'Robotics & AI', ARKK:'Innovation', KWEB:'China Internet', VNQ:'REITs', IYR:'Real Estate',
+  QQQ:'Nasdaq 100', DIA:'Dow Jones 30', RSP:'S&P 500 Equal Weight', MDY:'S&P MidCap 400', IJR:'S&P SmallCap 600', IWM:'Russell 2000',
+  IWF:'Russell 1000 Growth', IWD:'Russell 1000 Value', MTUM:'Momentum Factor', USMV:'Minimum Volatility', SPHB:'High Beta', QUAL:'Quality Factor',
+  ACWI:'All-Country World', EFA:'Developed ex-US', EEM:'Emerging Markets', VGK:'Europe', EWJ:'Japan', FXI:'China Large-Cap', MCHI:'China',
+  INDA:'India', EWZ:'Brazil', EWY:'South Korea', EWT:'Taiwan', EWG:'Germany', EWU:'United Kingdom', EWH:'Hong Kong', EWS:'Singapore', EWA:'Australia', EWC:'Canada',
+  TLT:'20+ Yr Treasuries', IEF:'7–10 Yr Treasuries', HYG:'High Yield Bonds', GLD:'Gold', SLV:'Silver', USO:'Crude Oil', UUP:'US Dollar', DBC:'Commodities'
+};
+const DEFAULT_GROUPS = [
+  { id:'sectors', name:'S&P 500 Sectors', benchmark:'SPY', builtin:true,
+    symbols:['XLK','XLC','XLY','XLF','XLI','XLE','XLB','XLV','XLP','XLU','XLRE'], hidden:[] },
+  { id:'watch', name:'My Watchlist', benchmark:'SPY', builtin:true,
+    symbols:['SOXX','XLK','EWH','ARKK','GLD','IXUS','MCHI','KWEB','FNGS','XLE','XLI','TLT','XLB','XLRE','XLC','XLU','XLF','XLY','XLV','XLP'], hidden:[] },
+  { id:'industries', name:'US Industry ETFs', benchmark:'SPY', builtin:true,
+    symbols:['SMH','IGV','CIBR','XBI','IHI','KRE','IAI','KIE','ITB','XRT','IYT','ITA','XME','GDX','XOP','TAN'], hidden:[] },
+  { id:'style', name:'Size & Style', benchmark:'SPY', builtin:true,
+    symbols:['QQQ','DIA','RSP','MDY','IWM','IWF','IWD','MTUM','USMV','SPHB'], hidden:[] },
+  { id:'world', name:'World Markets', benchmark:'ACWI', builtin:true,
+    symbols:['SPY','EFA','EEM','VGK','EWJ','FXI','INDA','EWZ','EWY','EWT','EWH','EWS'], hidden:[] }
+];
+const QUADS = ['Leading','Weakening','Lagging','Improving'];
+
+/* ───────────────────────── helpers ───────────────────────── */
+const $ = (s) => document.querySelector(s);
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const clone = (o) => JSON.parse(JSON.stringify(o));
+const sleep = (ms) => new Promise(r => setTimeout(r, ms));
+const clampInt = (v, lo, hi, d) => { const n = Math.round(Number(v)); return Number.isFinite(n) ? Math.min(hi, Math.max(lo, n)) : d; };
+const normSym = (s) => String(s || '').trim().toUpperCase().replace(/\s+/g, '').replace(/[^A-Z0-9:._!&\-]/g, '');
+const tick = (s) => { const i = s.lastIndexOf(':'); return i >= 0 ? s.slice(i + 1) : s; };
+const sameSym = (a, b) => tick(a) === tick(b);
+const fmt = (v, d = 2) => (v == null || !Number.isFinite(v)) ? '–' : v.toFixed(d);
+const fmtPrice = (v) => (v == null || !Number.isFinite(v)) ? '–' : (v >= 1000 ? v.toLocaleString('en-US', {maximumFractionDigits: 2}) : v.toFixed(2));
+const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const dayKey = (t) => new Date(t * 1000).toISOString().slice(0, 10);
+const weekKey = (t) => { const d = new Date(t * 1000); const back = (d.getUTCDay() + 6) % 7; return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate() - back)).toISOString().slice(0, 10); };
+const prettyKey = (k) => { const [y, m, d] = k.split('-').map(Number); return `${MONTHS[m - 1]} ${d}, ${y}`; };
+function dateLabel(t, tf, short) {
+  if (t == null) return '–';
+  if (tf === 'W') return (short ? 'Wk ' : 'Week of ') + prettyKey(weekKey(t));
+  return prettyKey(dayKey(t));
+}
+function quadOf(r, m) { if (r == null || m == null) return null; return r >= 100 ? (m >= 100 ? 'Leading' : 'Weakening') : (m >= 100 ? 'Improving' : 'Lagging'); }
+function headingOf(s, i) {
+  if (!s || i < 1) return null;
+  const r1 = s.ratio[i], m1 = s.mom[i], r0 = s.ratio[i - 1], m0 = s.mom[i - 1];
+  if ([r1, m1, r0, m0].some(v => v == null)) return null;
+  let a = Math.atan2(m1 - m0, r1 - r0) * 180 / Math.PI;
+  if (a < 0) a += 360;
+  return a;
+}
+function nameOf(sym) { return NAMES[tick(sym)] || state.names[sym] || state.names[tick(sym)] || dataName(sym) || ''; }
+
+/* ───────────────────────── math ─────────────────────────
+   Matches the values StockCharts' RRG serves (checked against its weekly and daily data):
+   RS-Ratio    = 100 × SMA(RS, 10) ÷ SMA(RS, 30),  RS = price ÷ benchmark
+   RS-Momentum = 100 × RS-Ratio ÷ SMA(RS-Ratio, 9)                                        */
+function sma(arr, n) {
+  const out = new Array(arr.length).fill(null);
+  let sum = 0, run = 0;
+  for (let i = 0; i < arr.length; i++) {
+    const v = arr[i];
+    if (v == null || !Number.isFinite(v)) { sum = 0; run = 0; continue; }
+    sum += v; run++;
+    if (run > n) { sum -= arr[i - n]; run = n; }
+    if (run === n) out[i] = sum / n;
+  }
+  return out;
+}
+function rrgCalc(closes, bench) {
+  const rs = closes.map((v, i) => (v > 0 && bench[i] > 0) ? 100 * v / bench[i] : null);
+  const fast = sma(rs, RATIO_FAST), slow = sma(rs, RATIO_SLOW);
+  const ratio = fast.map((v, i) => (v == null || slow[i] == null) ? null : 100 * v / slow[i]);
+  const ratioAvg = sma(ratio, MOM_LEN);
+  const mom = ratio.map((v, i) => (v == null || ratioAvg[i] == null) ? null : 100 * v / ratioAvg[i]);
+  return { ratio, mom };
+}
+function alignTo(benchBars, bars, keyFn) {
+  const map = new Map();
+  for (const b of bars) if (b && Number.isFinite(b.c)) map.set(keyFn(b.t), b.c);
+  let last = null;
+  return benchBars.map(b => { const v = map.get(keyFn(b.t)); if (v != null) last = v; return last; });
+}
+function buildModel(benchBars, symBars, tf) {
+  const keyFn = tf === 'W' ? weekKey : dayKey;
+  const bench = benchBars.map(b => b.c);
+  const series = {};
+  for (const [sym, bars] of symBars) {
+    const close = alignTo(benchBars, bars, keyFn);
+    const { ratio, mom } = rrgCalc(close, bench);
+    series[sym] = { close, ratio, mom };
+  }
+  let minIdx = benchBars.length - 1;
+  for (const s of Object.values(series)) {
+    const i = s.mom.findIndex((v, k) => v != null && s.ratio[k] != null);
+    if (i >= 0 && i < minIdx) minIdx = i;
+  }
+  return { tf, dates: benchBars.map(b => b.t), bench, series, minIdx: Math.max(0, minIdx) };
+}
+
+/* ───────────────────────── simulated example ───────────────────────── */
+function mulberry32(a) { return () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+function hashStr(s) { let h = 2166136261; for (const c of s) { h ^= c.charCodeAt(0); h = Math.imul(h, 16777619); } return h >>> 0; }
+function simulate(group, tf) {
+  const n = tf === 'W' ? 160 : 260;
+  const rnd = mulberry32(hashStr(group.id + tf + group.symbols.join()));
+  const gauss = () => { let u = 0, v = 0; while (!u) u = rnd(); while (!v) v = rnd(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v); };
+  const DAY = 86400, now = Date.now() / 1000;
+  const times = [];
+  let t = Math.floor(now / DAY) * DAY + 13.5 * 3600;
+  if (tf === 'W') { const d = new Date(t * 1000); t -= ((d.getUTCDay() + 6) % 7) * DAY; while (times.length < n) { times.unshift(t); t -= 7 * DAY; } }
+  else { while (times.length < n) { const wd = new Date(t * 1000).getUTCDay(); if (wd !== 0 && wd !== 6) times.unshift(t); t -= DAY; } }
+  const vol = tf === 'W' ? 0.02 : 0.009;
+  let b = 500; const bench = times.map(tt => (b *= Math.exp(0.0015 + vol * gauss()), { t: tt, c: b }));
+  const out = new Map();
+  for (const sym of group.symbols) {
+    const P = (tf === 'W' ? 34 : 60) + rnd() * (tf === 'W' ? 30 : 50);
+    const A = 0.05 + rnd() * 0.07, ph = rnd() * Math.PI * 2, base = 20 + rnd() * 200;
+    let noise = 0;
+    out.set(sym, bench.map((bb, i) => { noise = 0.8 * noise + 0.006 * gauss(); return { t: bb.t, c: base * (bb.c / 500) * Math.exp(A * Math.sin(2 * Math.PI * i / P + ph) + noise) }; }));
+  }
+  return { bench, out };
+}
+
+/* ───────────────────────── state ───────────────────────── */
+function loadStore() { try { const s = JSON.parse(localStorage.getItem(STORE_KEY) || 'null'); return s && typeof s === 'object' ? s : null; } catch { return null; } }
+function validGroups(g) {
+  if (!Array.isArray(g) || !g.length) return null;
+  const ok = g.filter(x => x && typeof x.id === 'string' && typeof x.name === 'string' && Array.isArray(x.symbols))
+    .map(x => ({ id: x.id, name: x.name.slice(0, 40), benchmark: normSym(x.benchmark) || 'SPY', builtin: !!x.builtin,
+      symbols: x.symbols.map(normSym).filter(Boolean).slice(0, MAX_SYMBOLS), hidden: Array.isArray(x.hidden) ? x.hidden.map(normSym) : [] }));
+  return ok.length ? ok : null;
+}
+const saved = loadStore();
+const state = {
+  groups: validGroups(saved?.groups) || clone(DEFAULT_GROUPS),
+  activeId: saved?.activeId,
+  tf: saved?.tf === 'D' ? 'D' : 'W',
+  tail: clampInt(saved?.tail, 1, 30, 5),
+  names: (saved?.names && typeof saved.names === 'object') ? saved.names : {},
+  mode: 'example',          // 'example' | 'live'
+  booting: true, loadErr: null,
+  model: null,
+  end: null,
+  highlight: null,
+  playing: false, playTimer: null, playFrom: null,
+  sort: { key: null, dir: 1 },
+  bars: new Map(),          // `${sym}|${tf}` -> { bars, at }
+  errs: new Map(),          // `${sym}|${tf}` -> err
+  progress: null,           // { done, total }
+  page: null,               // page-level problem { kind, code, text }
+  updatedAt: null
+};
+if (!state.groups.some(g => g.id === state.activeId)) state.activeId = state.groups[0].id;
+function save() {
+  try { localStorage.setItem(STORE_KEY, JSON.stringify({ groups: state.groups, activeId: state.activeId, tf: state.tf, tail: state.tail, names: state.names })); } catch { /* storage unavailable */ }
+}
+const group = () => state.groups.find(g => g.id === state.activeId) || state.groups[0];
+const bkey = (sym, tf = state.tf) => `${sym}|${tf}`;
+const colorOf = (sym) => { const i = group().symbols.indexOf(sym); return `var(--s${(i < 0 ? 0 : i) % PALETTE})`; };
+const isHidden = (sym) => group().hidden.includes(sym);
+
+/* ───────────────────────── data ─────────────────────────
+   Prices come from files next to this page that a scheduled GitHub job refreshes:
+   data/meta.json (symbol list, names, update time), data/d.json (daily) and data/w.json (weekly).
+   The service worker keeps the last copy so the app opens offline. */
+const GH = (() => {
+  const h = location.hostname;
+  if (!h.endsWith('.github.io')) return null;
+  const repo = location.pathname.split('/').filter(Boolean)[0];
+  return repo ? { owner: h.split('.')[0], repo } : null;
+})();
+const TICKERS_URL = GH ? `https://github.com/${GH.owner}/${GH.repo}/edit/main/tickers.txt` : null;
+const DATA = { meta: null, D: null, W: null, loadedAt: 0 };   // D / W: Map(symbol -> [{t, c}])
+const FILE = { D: 'd.json', W: 'w.json' };
+const STALE_MS = 4 * 86400000;
+let loadToken = 0;
+const toT = (day) => Date.UTC(+day.slice(0, 4), +day.slice(5, 7) - 1, +day.slice(8, 10)) / 1000;
+
+async function getJSON(name, refresh) {
+  const res = await fetch(`data/${name}${refresh ? `?r=${Date.now()}` : ''}`, { cache: refresh ? 'no-store' : 'no-cache' });
+  if (!res.ok) throw { code: 'http', message: `HTTP ${res.status}` };
+  return res.json();
+}
+function unpackFile(obj) {
+  const t = (obj.dates || []).map(toT), out = new Map();
+  for (const [s, arr] of Object.entries(obj.c || {})) {
+    const bars = [];
+    for (let i = 0; i < arr.length; i++) if (arr[i] != null && arr[i] > 0) bars.push({ t: t[i], c: arr[i] });
+    if (bars.length) out.set(s, bars);
+  }
+  return out;
+}
+async function loadData(tf, refresh) {
+  const needMeta = refresh || !DATA.meta;
+  const [meta, file] = await Promise.all([needMeta ? getJSON('meta.json', refresh) : DATA.meta, getJSON(FILE[tf], refresh)]);
+  DATA.meta = meta;
+  DATA[tf] = unpackFile(file);
+  if (refresh) DATA[tf === 'W' ? 'D' : 'W'] = null;     // the other period reloads when you switch to it
+  DATA.loadedAt = Date.now();
+}
+const symInfo = (sym) => (DATA.meta && DATA.meta.symbols && DATA.meta.symbols[tick(sym)]) || null;
+function dataName(sym) { const r = symInfo(sym); return r && r.name ? r.name : ''; }
+function barsFor(sym, tf) {
+  const m = DATA[tf], b = m && m.get(tick(sym));
+  return b ? { bars: b } : null;
+}
+function missingErr(sym) {
+  const r = symInfo(sym);
+  return { code: 'missing', failed: !!r && r.status === 'failed', message: (r && r.error) || '' };
+}
+function errText(e) {
+  if (!e) return 'Couldn’t load prices';
+  if (e.failed) return 'Not found on Yahoo Finance';
+  if (e.code === 'missing') return 'Not in the price list yet';
+  return 'Couldn’t load prices';
+}
+const updatedMs = () => { const u = DATA.meta && Date.parse(DATA.meta.updated); return Number.isFinite(u) ? u : null; };
+const whenText = (ms) => { if (!ms) return 'earlier'; const d = new Date(ms); return d.toLocaleDateString([], { month: 'short', day: 'numeric' }) + ', ' + d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }); };
+function agoText(ms) {
+  if (!ms) return 'earlier';
+  const min = Math.round((Date.now() - ms) / 60000);
+  if (min < 1) return 'just now';
+  if (min < 60) return `${min} min ago`;
+  if (min < 24 * 60) return `${Math.round(min / 60)} h ago`;
+  return whenText(ms);
+}
+
+async function loadLive(refresh = false) {
+  const tf = state.tf;
+  if (!refresh && DATA[tf]) return;
+  const token = ++loadToken;
+  state.progress = true;
+  renderStatus(); renderOverlay(); renderControls();
+  try { await loadData(tf, refresh); state.loadErr = null; }
+  catch (e) { state.loadErr = e || { code: 'network' }; }
+  if (token !== loadToken) return;
+  state.progress = null; state.booting = false;
+  rebuild(true);
+}
+
+function rebuild(keepEnd) {
+  const g = group(), tf = state.tf;
+  const prev = state.model;
+  const wasAtEnd = !!prev && prev.tf === tf && state.end >= prev.dates.length - 1;
+  const have = DATA[tf];
+  state.errs.clear();
+  state.page = null;
+  if (have) for (const s of [g.benchmark, ...g.symbols]) if (!barsFor(s, tf)) state.errs.set(bkey(s, tf), missingErr(s));
+  const bench = have ? barsFor(g.benchmark, tf) : null;
+  const busy = state.booting || !!state.progress;
+  if (bench) {
+    const map = new Map();
+    for (const s of g.symbols) { const r = barsFor(s, tf); if (r) map.set(s, r.bars); }
+    state.model = buildModel(bench.bars, map, tf);
+    state.mode = 'live';
+    const missing = g.symbols.filter(s => !barsFor(s, tf));
+    const notFound = missing.filter(s => missingErr(s).failed), notListed = missing.filter(s => !missingErr(s).failed);
+    const upd = updatedMs();
+    if (notListed.length) {
+      const list = notListed.map(tick).join(', '), one = notListed.length === 1;
+      state.page = { kind: 'warn', code: 'missing',
+        text: `${list} ${one ? 'isn’t' : 'aren’t'} in the price list yet.` + (TICKERS_URL ? ` Add ${one ? 'it' : 'them'} to tickers.txt on GitHub and save. Prices appear a few minutes later; then press Refresh.` : ''),
+        link: TICKERS_URL ? { href: TICKERS_URL, label: 'Open tickers.txt' } : null };
+    } else if (notFound.length) {
+      state.page = { kind: 'warn', code: 'notfound',
+        text: `${notFound.map(tick).join(', ')} wasn’t found on Yahoo Finance. Check the ticker in tickers.txt. Hong Kong tickers look like 0700.HK, crypto like BTC-USD.`,
+        link: TICKERS_URL ? { href: TICKERS_URL, label: 'Open tickers.txt' } : null };
+    } else if (upd && Date.now() - upd > STALE_MS) {
+      state.page = { kind: 'warn', code: 'stale', text: `Prices were last updated on ${whenText(upd)}. The automatic update may have paused. Press Refresh to check again.` };
+    }
+  } else {
+    const sim = simulate(g, tf);
+    state.model = buildModel(sim.bench, sim.out, tf);
+    state.mode = 'example';
+    if (!busy) {
+      if (state.loadErr || !have) {
+        state.page = { kind: 'err', code: 'load',
+          text: navigator.onLine === false
+            ? 'You’re offline and this period hasn’t been saved on this phone yet. Connect, then press Refresh. Showing a simulated example meanwhile.'
+            : 'Couldn’t load prices. Press Refresh to try again. Showing a simulated example meanwhile.' };
+      } else {
+        const failed = missingErr(g.benchmark).failed;
+        state.page = { kind: 'err', code: 'bench',
+          text: `The benchmark ${tick(g.benchmark)} ${failed ? 'wasn’t found on Yahoo Finance' : 'isn’t in the price list'}. Use SPY, QQQ or ACWI, for example. Showing a simulated example meanwhile.` };
+      }
+    }
+  }
+  const last = state.model.dates.length - 1;
+  if (wasAtEnd || !keepEnd || state.end == null || state.end > last || state.end < state.model.minIdx) state.end = last;
+  renderAll();
+}
+
+/* ───────────────────────── rendering: status / banner ───────────────────────── */
+function renderStatus() {
+  const el = $('#status');
+  const upd = updatedMs(), off = navigator.onLine === false;
+  let pill;
+  if (state.progress) pill = `<span class="pill loading"><span class="dot"></span>Loading prices</span>`;
+  else if (state.mode === 'live') {
+    const stale = !upd || Date.now() - upd > STALE_MS;
+    pill = `<span class="pill ${off || stale ? 'example' : 'live'}"><span class="dot"></span>${off ? 'Offline · saved prices' : `Updated ${esc(agoText(upd))}`}</span>`;
+  } else pill = `<span class="pill example"><span class="dot"></span>Simulated example</span>`;
+  let meta = '';
+  if (state.mode === 'live' && state.model) {
+    const lastT = state.model.dates[state.model.dates.length - 1];
+    meta = `<span>Latest bar ${esc(dateLabel(lastT, state.tf, true))}</span>`;
+  }
+  el.innerHTML = pill + meta;
+}
+function renderBanner() {
+  const el = $('#banner');
+  const p = state.page;
+  if (!p) { el.hidden = true; el.innerHTML = ''; return; }
+  el.hidden = false;
+  el.className = 'banner' + (p.kind === 'err' ? ' err' : '');
+  el.innerHTML = `<p>${esc(p.text)}</p>` + (p.link ? `<a class="btn small" href="${esc(p.link.href)}" target="_blank" rel="noopener">${esc(p.link.label)}</a>` : '');
+}
+const waitingForLive = () => state.mode === 'example' && (state.booting || !!state.progress);
+function renderOverlay() {
+  const o = $('#overlay');
+  o.hidden = !waitingForLive();
+  if (!o.hidden) $('#overlayText').textContent = 'Loading prices…';
+}
+
+/* ───────────────────────── rendering: chart ───────────────────────── */
+const SVGNS = 'http://www.w3.org/2000/svg';
+let hits = [];
+function niceStep(span) {
+  const steps = [0.1, 0.2, 0.25, 0.5, 1, 2, 2.5, 5, 10, 20, 25, 50];
+  for (const s of steps) if (span / s <= 4.5) return s;
+  return 100;
+}
+function visibleSyms() {
+  const m = state.model; if (!m) return [];
+  return group().symbols.filter(s => m.series[s] && !isHidden(s));
+}
+function tailPoints(sym, end) {
+  const s = state.model.series[sym]; const pts = [];
+  for (let i = Math.max(0, end - state.tail); i <= end; i++) {
+    if (s.ratio[i] != null && s.mom[i] != null) pts.push({ x: s.ratio[i], y: s.mom[i], i });
+  }
+  return pts;
+}
+function extentFor(syms, from, to) {
+  let dx = 0, dy = 0;
+  for (const sym of syms) {
+    const s = state.model.series[sym];
+    for (let i = Math.max(0, from); i <= to; i++) {
+      if (s.ratio[i] == null || s.mom[i] == null) continue;
+      dx = Math.max(dx, Math.abs(s.ratio[i] - 100)); dy = Math.max(dy, Math.abs(s.mom[i] - 100));
+    }
+  }
+  return [Math.max(dx * 1.12, 1.2), Math.max(dy * 1.12, 1.2)];
+}
+function drawChart() {
+  const svg = $('#chart'), wrap = $('#chartWrap');
+  const W = Math.max(300, Math.round(wrap.clientWidth || 800));
+  const H = Math.round(W < 560 ? W * 1.02 : Math.min(W * 0.66, 720));
+  svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+  svg.setAttribute('width', W); svg.setAttribute('height', H);
+  const small = W < 560;
+  const M = { l: small ? 40 : 54, r: 12, t: 12, b: small ? 36 : 44 };
+  const pw = W - M.l - M.r, ph = H - M.t - M.b;
+  const m = state.model;
+  const syms = visibleSyms();
+  const end = state.end ?? 0;
+  const [dx, dy] = state.playing
+    ? extentFor(syms, (state.playFrom ?? end) - state.tail, m.dates.length - 1)
+    : extentFor(syms, end - state.tail, end);
+  const X = (v) => M.l + (v - (100 - dx)) / (2 * dx) * pw;
+  const Y = (v) => M.t + (1 - (v - (100 - dy)) / (2 * dy)) * ph;
+  const cx = X(100), cy = Y(100);
+  let h = '';
+
+  // quadrants
+  h += `<rect x="${cx}" y="${M.t}" width="${M.l + pw - cx}" height="${cy - M.t}" style="fill:var(--lead-bg)"/>`;
+  h += `<rect x="${cx}" y="${cy}" width="${M.l + pw - cx}" height="${M.t + ph - cy}" style="fill:var(--weak-bg)"/>`;
+  h += `<rect x="${M.l}" y="${cy}" width="${cx - M.l}" height="${M.t + ph - cy}" style="fill:var(--lag-bg)"/>`;
+  h += `<rect x="${M.l}" y="${M.t}" width="${cx - M.l}" height="${cy - M.t}" style="fill:var(--imp-bg)"/>`;
+
+  // grid + ticks
+  const sx = niceStep(dx), sy = niceStep(dy);
+  const fsT = small ? 10 : 11;
+  for (let k = -Math.floor(dx / sx); k <= Math.floor(dx / sx); k++) {
+    const v = 100 + k * sx, x = X(v);
+    if (k !== 0) h += `<line x1="${x}" y1="${M.t}" x2="${x}" y2="${M.t + ph}" style="stroke:var(--grid)" stroke-width="1"/>`;
+    h += `<text x="${x}" y="${M.t + ph + 15}" text-anchor="middle" font-size="${fsT}" style="fill:var(--muted);font-family:var(--f-num)">${+v.toFixed(2)}</text>`;
+  }
+  for (let k = -Math.floor(dy / sy); k <= Math.floor(dy / sy); k++) {
+    const v = 100 + k * sy, y = Y(v);
+    if (k !== 0) h += `<line x1="${M.l}" y1="${y}" x2="${M.l + pw}" y2="${y}" style="stroke:var(--grid)" stroke-width="1"/>`;
+    h += `<text x="${M.l - 6}" y="${y + 3.5}" text-anchor="end" font-size="${fsT}" style="fill:var(--muted);font-family:var(--f-num)">${+v.toFixed(2)}</text>`;
+  }
+  h += `<line x1="${cx}" y1="${M.t}" x2="${cx}" y2="${M.t + ph}" style="stroke:var(--line-strong)" stroke-width="1.3"/>`;
+  h += `<line x1="${M.l}" y1="${cy}" x2="${M.l + pw}" y2="${cy}" style="stroke:var(--line-strong)" stroke-width="1.3"/>`;
+  h += `<rect x="${M.l}" y="${M.t}" width="${pw}" height="${ph}" fill="none" style="stroke:var(--line)" stroke-width="1"/>`;
+
+  // quadrant labels
+  const fq = Math.round(Math.max(13, Math.min(24, W / 42)));
+  const qs = `font-size="${fq}" font-weight="600" letter-spacing="1.5" opacity="0.62"`;
+  h += `<text x="${M.l + pw - 10}" y="${M.t + fq + 6}" text-anchor="end" style="fill:var(--lead);font-family:var(--f-label)" ${qs}>LEADING</text>`;
+  h += `<text x="${M.l + pw - 10}" y="${M.t + ph - 10}" text-anchor="end" style="fill:var(--weak);font-family:var(--f-label)" ${qs}>WEAKENING</text>`;
+  h += `<text x="${M.l + 10}" y="${M.t + ph - 10}" style="fill:var(--lag);font-family:var(--f-label)" ${qs}>LAGGING</text>`;
+  h += `<text x="${M.l + 10}" y="${M.t + fq + 6}" style="fill:var(--imp);font-family:var(--f-label)" ${qs}>IMPROVING</text>`;
+
+  // axis titles
+  h += `<text x="${M.l + pw / 2}" y="${H - 6}" text-anchor="middle" font-size="${small ? 11 : 12}" font-weight="600" style="fill:var(--muted)">JdK RS-Ratio →</text>`;
+  h += `<text transform="translate(${small ? 11 : 14} ${M.t + ph / 2}) rotate(-90)" text-anchor="middle" font-size="${small ? 11 : 12}" font-weight="600" style="fill:var(--muted)">JdK RS-Momentum →</text>`;
+
+  // tails
+  hits = [];
+  const labels = [];
+  const order = state.highlight ? [...syms.filter(s => s !== state.highlight), ...syms.filter(s => s === state.highlight)] : syms;
+  for (const sym of order) {
+    const pts = tailPoints(sym, end);
+    if (!pts.length) continue;
+    const col = colorOf(sym);
+    const dim = state.highlight && state.highlight !== sym;
+    let g = `<g opacity="${dim ? 0.14 : 1}">`;
+    const n = pts.length;
+    for (let k = 1; k < n; k++) {
+      const a = pts[k - 1], b = pts[k];
+      const op = n > 2 ? 0.35 + 0.65 * (k / (n - 1)) : 1;
+      g += `<line x1="${X(a.x).toFixed(1)}" y1="${Y(a.y).toFixed(1)}" x2="${X(b.x).toFixed(1)}" y2="${Y(b.y).toFixed(1)}" style="stroke:${col}" stroke-width="${state.highlight === sym ? 2.4 : 1.7}" stroke-linecap="round" opacity="${op.toFixed(2)}"/>`;
+    }
+    for (let k = 0; k < n - 1; k++) {
+      const p = pts[k];
+      g += `<circle cx="${X(p.x).toFixed(1)}" cy="${Y(p.y).toFixed(1)}" r="2.4" style="fill:${col}" opacity="${(n > 2 ? 0.45 + 0.55 * (k / (n - 1)) : 1).toFixed(2)}"/>`;
+      if (!dim) hits.push({ x: X(p.x), y: Y(p.y), sym, i: p.i });
+    }
+    const hd = pts[n - 1], hx = X(hd.x), hy = Y(hd.y);
+    g += `<circle cx="${hx.toFixed(1)}" cy="${hy.toFixed(1)}" r="${state.highlight === sym ? 6.5 : 5.5}" style="fill:${col};stroke:var(--surface)" stroke-width="1.6"/>`;
+    g += '</g>';
+    h += g;
+    if (!dim) hits.push({ x: hx, y: hy, sym, i: hd.i, head: true });
+    // label placement: ahead of the direction of travel
+    let ox = 8, oy = -8, anchor = 'start';
+    if (n > 1) {
+      const pv = pts[n - 2], vx = hx - X(pv.x), vy = hy - Y(pv.y), len = Math.hypot(vx, vy) || 1;
+      ox = vx / len * 11; oy = vy / len * 11;
+      anchor = ox < -3 ? 'end' : ox > 3 ? 'start' : 'middle';
+      if (Math.abs(oy) < 4) oy += 4;
+    }
+    let lx = hx + ox, ly = hy + oy + 4;
+    lx = Math.min(Math.max(lx, M.l + 4), M.l + pw - 4);
+    if (anchor === 'start' && lx > M.l + pw - 40) anchor = 'end';
+    if (anchor === 'end' && lx < M.l + 40) anchor = 'start';
+    ly = Math.min(Math.max(ly, M.t + 12), M.t + ph - 4);
+    labels.push(`<text x="${lx.toFixed(1)}" y="${ly.toFixed(1)}" text-anchor="${anchor}" font-size="${small ? 11 : 12}" font-weight="600" style="fill:${col};stroke:var(--surface);font-family:var(--f-num)" stroke-width="3" paint-order="stroke" stroke-linejoin="round" opacity="${dim ? 0.2 : 1}">${esc(tick(sym))}</text>`);
+  }
+  h += labels.join('');
+
+  if (!syms.length) {
+    const msg = group().symbols.length ? 'All symbols are hidden. Tick one in the table below.' : 'Add an ETF below to start the graph.';
+    h += `<text x="${M.l + pw / 2}" y="${M.t + ph / 2 - 14}" text-anchor="middle" font-size="14" style="fill:var(--muted)">${esc(msg)}</text>`;
+  }
+  svg.innerHTML = h;
+  svg.setAttribute('aria-label', `Relative rotation graph of ${syms.length} symbols against ${tick(group().benchmark)}, ${dateLabel(m.dates[end], state.tf)}`);
+}
+
+/* tooltip + click */
+function nearestHit(ev) {
+  const svg = $('#chart'); const r = svg.getBoundingClientRect();
+  const vb = svg.viewBox.baseVal; const k = vb.width / r.width;
+  const px = (ev.clientX - r.left) * k, py = (ev.clientY - r.top) * k;
+  let best = null, bd = 16 * k;
+  for (const h of hits) { const d = Math.hypot(h.x - px, h.y - py) - (h.head ? 3 : 0); if (d < bd) { bd = d; best = h; } }
+  return best;
+}
+function showTip(hit) {
+  const tip = $('#tip'), wrap = $('#chartWrap'), svg = $('#chart');
+  if (!hit) { tip.hidden = true; return; }
+  const s = state.model.series[hit.sym], i = hit.i;
+  const q = quadOf(s.ratio[i], s.mom[i]);
+  const prev = i > 0 ? s.close[i - 1] : null;
+  const chg = (prev && s.close[i]) ? (s.close[i] / prev - 1) * 100 : null;
+  tip.innerHTML = `<div class="t-sym"><span class="swatch" style="background:${colorOf(hit.sym)}"></span>${esc(tick(hit.sym))} <span class="t-name">${esc(nameOf(hit.sym))}</span></div>
+    <div class="t-date">${esc(dateLabel(state.model.dates[i], state.tf))}</div>
+    <dl><dt>RS-Ratio</dt><dd>${fmt(s.ratio[i])}</dd><dt>RS-Momentum</dt><dd>${fmt(s.mom[i])}</dd>
+    <dt>Close</dt><dd>${fmtPrice(s.close[i])}${chg != null ? ` <span class="${chg >= 0 ? 'up' : 'down'}">${chg >= 0 ? '+' : ''}${chg.toFixed(2)}%</span>` : ''}</dd>
+    <dt>Quadrant</dt><dd><span class="q ${q}">${q}</span></dd></dl>`;
+  tip.hidden = false;
+  const r = svg.getBoundingClientRect(), vb = svg.viewBox.baseVal, k = r.width / vb.width;
+  const x = hit.x * k, y = hit.y * k;
+  const tw = tip.offsetWidth, th = tip.offsetHeight, ww = wrap.clientWidth;
+  let left = x + 14, top = y - th - 10;
+  if (left + tw > ww - 6) left = x - tw - 14;
+  if (left < 6) left = 6;
+  if (top < 6) top = y + 14;
+  tip.style.left = left + 'px'; tip.style.top = top + 'px';
+}
+
+/* ───────────────────────── rendering: table ───────────────────────── */
+function rowData(sym) {
+  const m = state.model, s = m && m.series[sym], i = state.end;
+  const err = state.mode !== 'example' ? state.errs.get(bkey(sym)) : null;
+  if (waitingForLive()) return { sym, err: null, loading: true };
+  if (!s || i == null) return { sym, err, loading: !err && state.mode !== 'example' };
+  const prev = i > 0 ? s.close[i - 1] : null;
+  return {
+    sym, err: null,
+    price: s.close[i],
+    chg: (prev && s.close[i] != null) ? (s.close[i] / prev - 1) * 100 : null,
+    ratio: s.ratio[i], mom: s.mom[i], quad: quadOf(s.ratio[i], s.mom[i]), head: headingOf(s, i)
+  };
+}
+function headIcon(a) {
+  if (a == null) return '';
+  const col = a <= 90 ? 'var(--lead)' : a < 180 ? 'var(--imp)' : a < 270 ? 'var(--lag)' : 'var(--weak)';
+  return `<svg viewBox="0 0 16 16" aria-hidden="true" style="transform:rotate(${(-a).toFixed(0)}deg)"><path d="M2 8h10M8.5 4.5 12 8l-3.5 3.5" fill="none" style="stroke:${col}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+}
+function renderTable() {
+  const g = group();
+  const tb = $('#rows');
+  let rows = g.symbols.map(rowData);
+  const { key, dir } = state.sort;
+  if (key) {
+    const val = (r) => key === 'sym' ? tick(r.sym) : key === 'name' ? nameOf(r.sym) : key === 'quad' ? (r.quad ? QUADS.indexOf(r.quad) : 9) : r[key];
+    rows = rows.slice().sort((a, b) => {
+      const va = val(a), vb = val(b);
+      if (va == null && vb == null) return 0; if (va == null) return 1; if (vb == null) return -1;
+      return (typeof va === 'string' ? va.localeCompare(vb) : va - vb) * dir;
+    });
+  }
+  document.querySelectorAll('th button[data-sort]').forEach(b => {
+    const on = b.dataset.sort === key;
+    b.parentElement.setAttribute('aria-sort', on ? (dir > 0 ? 'ascending' : 'descending') : 'none');
+    b.textContent = b.textContent.replace(/ [▲▼]$/, '') + (on ? (dir > 0 ? ' ▲' : ' ▼') : '');
+  });
+  if (!rows.length) {
+    tb.innerHTML = `<tr><td colspan="10" class="empty">No symbols in this group yet. Type a ticker such as <b>SMH</b> or a name such as <b>semiconductor</b> above.</td></tr>`;
+  } else {
+    tb.innerHTML = rows.map(r => {
+      const hid = isHidden(r.sym), hl = state.highlight === r.sym;
+      const cells = r.err
+        ? `<td class="r" colspan="6"><span class="rowerr">${esc(errText(r.err))}</span></td>`
+        : r.loading
+          ? `<td class="r" colspan="6"><span class="count">Loading…</span></td>`
+          : `<td class="r">${fmtPrice(r.price)}</td>
+             <td class="r ${r.chg == null ? '' : r.chg >= 0 ? 'up' : 'down'}">${r.chg == null ? '–' : (r.chg >= 0 ? '+' : '') + r.chg.toFixed(2)}</td>
+             <td class="r">${fmt(r.ratio)}</td><td class="r">${fmt(r.mom)}</td>
+             <td>${r.quad ? `<span class="q ${r.quad}">${r.quad}</span>` : '<span class="count">–</span>'}</td>
+             <td class="r"><span class="hd">${headIcon(r.head)}${r.head == null ? '–' : Math.round(r.head) + '°'}</span></td>`;
+      return `<tr data-sym="${esc(r.sym)}" class="${hid ? 'off' : ''}${hl ? ' hl' : ''}">
+        <td><input class="chk" type="checkbox" ${hid ? '' : 'checked'} aria-label="Show ${esc(tick(r.sym))} on the graph" data-act="vis"></td>
+        <td><span class="sym"><span class="swatch" style="background:${colorOf(r.sym)}"></span>${esc(tick(r.sym))}</span></td>
+        <td class="name hide-sm" title="${esc(nameOf(r.sym))}">${esc(nameOf(r.sym)) || '<span class="count">–</span>'}</td>
+        ${cells}
+        <td><button class="x" type="button" data-act="rm" aria-label="Remove ${esc(tick(r.sym))}"><svg viewBox="0 0 16 16"><path d="M4 4l8 8M12 4l-8 8"/></svg></button></td>
+      </tr>`;
+    }).join('');
+  }
+  const shown = g.symbols.filter(s => !isHidden(s)).length;
+  $('#count').textContent = `${g.symbols.length} symbol${g.symbols.length === 1 ? '' : 's'} · ${shown} shown · max ${MAX_SYMBOLS}`;
+}
+
+/* ───────────────────────── rendering: controls ───────────────────────── */
+function renderControls() {
+  const g = group();
+  const sel = $('#group');
+  sel.innerHTML = state.groups.map(x => `<option value="${esc(x.id)}"${x.id === g.id ? ' selected' : ''}>${esc(x.name)}</option>`).join('');
+  $('#title').textContent = g.name;
+  $('#sub').innerHTML = `JdK RS-Ratio vs RS-Momentum, measured against <b>${esc(tick(g.benchmark))}</b>${nameOf(g.benchmark) ? ` (${esc(nameOf(g.benchmark))})` : ''}`;
+  if (document.activeElement !== $('#benchmark')) $('#benchmark').value = g.benchmark;
+  $('#delBtn').textContent = delArmed ? (g.builtin ? 'Confirm reset' : 'Confirm delete') : (g.builtin ? 'Reset' : 'Delete');
+  $('#delBtn').title = g.builtin ? 'Restore this group’s original symbols' : 'Delete this group';
+  $('#tfD').setAttribute('aria-pressed', String(state.tf === 'D'));
+  $('#tfW').setAttribute('aria-pressed', String(state.tf === 'W'));
+  $('#tail').value = state.tail;
+  $('#tailVal').textContent = `${state.tail} ${state.tf === 'W' ? 'wk' : 'd'}`;
+  const m = state.model;
+  const d = $('#date');
+  if (m) {
+    d.min = m.minIdx; d.max = m.dates.length - 1; d.value = state.end;
+    $('#dateLbl').textContent = dateLabel(m.dates[state.end], state.tf);
+    d.setAttribute('aria-valuetext', dateLabel(m.dates[state.end], state.tf));
+  }
+  const atEnd = !m || state.end >= m.dates.length - 1, atStart = !m || state.end <= m.minIdx;
+  $('#fwdBtn').disabled = atEnd; $('#lastBtn').disabled = atEnd;
+  $('#backBtn').disabled = atStart; $('#firstBtn').disabled = atStart;
+  $('#playIcon').innerHTML = state.playing ? '<path d="M8 5v14M16 5v14"/>' : '<path d="M8 5l11 7-11 7z"/>';
+  $('#playBtn').setAttribute('aria-label', state.playing ? 'Pause' : 'Play rotation');
+  $('#refreshBtn').disabled = !!state.progress;
+}
+function renderAll() {
+  renderControls(); renderStatus(); renderBanner(); renderOverlay();
+  if (state.model) drawChart();
+  renderTable();
+}
+function renderFrame() { renderControls(); drawChart(); renderTable(); $('#tip').hidden = true; }
+
+/* ───────────────────────── interactions ───────────────────────── */
+let delArmed = false, delTimer = null;
+function setGroup(id) {
+  stopPlay();
+  state.activeId = id; state.highlight = null; state.sort = { key: null, dir: 1 }; delArmed = false;
+  save();
+  rebuild();
+  loadLive();
+}
+$('#group').addEventListener('change', (e) => setGroup(e.target.value));
+$('#renameBtn').addEventListener('click', () => {
+  const inp = $('#groupName'), sel = $('#group');
+  inp.value = group().name; sel.hidden = true; inp.hidden = false; $('#renameBtn').hidden = true; inp.focus(); inp.select();
+});
+function finishRename(commit) {
+  const inp = $('#groupName');
+  if (inp.hidden) return;
+  const v = inp.value.trim().slice(0, 40);
+  if (commit && v) { group().name = v; save(); }
+  inp.hidden = true; $('#group').hidden = false; $('#renameBtn').hidden = false;
+  renderControls();
+}
+$('#groupName').addEventListener('keydown', (e) => { if (e.key === 'Enter') finishRename(true); if (e.key === 'Escape') finishRename(false); });
+$('#groupName').addEventListener('blur', () => finishRename(true));
+$('#newBtn').addEventListener('click', () => {
+  let n = 1; while (state.groups.some(g => g.name === `My group ${n}`)) n++;
+  const g = { id: 'g' + Date.now().toString(36), name: `My group ${n}`, benchmark: group().benchmark, symbols: [], hidden: [], builtin: false };
+  state.groups.push(g);
+  setGroup(g.id);
+  $('#addSym').focus();
+});
+$('#delBtn').addEventListener('click', () => {
+  const g = group();
+  if (!delArmed) {
+    delArmed = true; renderControls();
+    clearTimeout(delTimer); delTimer = setTimeout(() => { delArmed = false; renderControls(); }, 4000);
+    return;
+  }
+  delArmed = false; clearTimeout(delTimer);
+  if (g.builtin) {
+    const def = DEFAULT_GROUPS.find(d => d.id === g.id);
+    Object.assign(g, clone(def));
+    setGroup(g.id);
+  } else {
+    state.groups = state.groups.filter(x => x.id !== g.id);
+    if (!state.groups.length) state.groups = clone(DEFAULT_GROUPS);
+    setGroup(state.groups[0].id);
+  }
+});
+
+function applyBenchmark() {
+  const v = normSym($('#benchmark').value);
+  const g = group();
+  if (!v) { $('#benchmark').value = g.benchmark; return; }
+  if (v === g.benchmark) return;
+  g.benchmark = v; save();
+  rebuild(true); loadLive();
+}
+$('#benchmark').addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); applyBenchmark(); e.target.blur(); } });
+$('#benchmark').addEventListener('change', applyBenchmark);
+
+function setTf(tf) {
+  if (state.tf === tf) return;
+  stopPlay(); state.tf = tf; save();
+  rebuild(); loadLive();
+}
+$('#tfD').addEventListener('click', () => setTf('D'));
+$('#tfW').addEventListener('click', () => setTf('W'));
+$('#tail').addEventListener('input', (e) => { state.tail = clampInt(e.target.value, 1, 30, 5); save(); renderFrame(); });
+$('#refreshBtn').addEventListener('click', () => loadLive(true));
+
+// timeline
+function setEnd(i) {
+  const m = state.model; if (!m) return;
+  state.end = Math.max(m.minIdx, Math.min(m.dates.length - 1, i));
+  renderFrame();
+}
+$('#date').addEventListener('input', (e) => { stopPlay(); setEnd(+e.target.value); });
+$('#backBtn').addEventListener('click', () => { stopPlay(); setEnd(state.end - 1); });
+$('#fwdBtn').addEventListener('click', () => { stopPlay(); setEnd(state.end + 1); });
+$('#firstBtn').addEventListener('click', () => { stopPlay(); setEnd(state.model.minIdx + state.tail); });
+$('#lastBtn').addEventListener('click', () => { stopPlay(); setEnd(state.model.dates.length - 1); });
+function stopPlay() {
+  if (!state.playing) return;
+  state.playing = false; clearInterval(state.playTimer); state.playTimer = null;
+  renderFrame();
+}
+$('#playBtn').addEventListener('click', () => {
+  const m = state.model; if (!m) return;
+  if (state.playing) { stopPlay(); return; }
+  const last = m.dates.length - 1;
+  if (state.end >= last) state.end = Math.max(m.minIdx + state.tail, last - (state.tf === 'W' ? 52 : 120));
+  state.playing = true; state.playFrom = state.end;
+  renderFrame();
+  state.playTimer = setInterval(() => {
+    if (state.end >= state.model.dates.length - 1) { stopPlay(); return; }
+    state.end++; renderFrame();
+  }, state.tf === 'W' ? 380 : 220);
+});
+
+// chart hover / click
+const chartEl = $('#chart');
+chartEl.addEventListener('pointermove', (e) => { if (e.pointerType === 'mouse') showTip(nearestHit(e)); });
+chartEl.addEventListener('pointerleave', () => { $('#tip').hidden = true; });
+chartEl.addEventListener('click', (e) => {
+  const hit = nearestHit(e);
+  state.highlight = hit ? (state.highlight === hit.sym ? null : hit.sym) : null;
+  drawChart(); renderTable();
+  showTip(hit ? nearestHit(e) : null);
+});
+
+// table
+$('#rows').addEventListener('click', (e) => {
+  const tr = e.target.closest('tr[data-sym]'); if (!tr) return;
+  const sym = tr.dataset.sym, g = group();
+  const act = e.target.closest('[data-act]')?.dataset.act;
+  if (act === 'rm') {
+    g.symbols = g.symbols.filter(s => s !== sym); g.hidden = g.hidden.filter(s => s !== sym);
+    if (state.highlight === sym) state.highlight = null;
+    save(); rebuild(true); return;
+  }
+  if (act === 'vis') {
+    g.hidden = e.target.checked ? g.hidden.filter(s => s !== sym) : [...g.hidden, sym];
+    save(); drawChart(); renderTable(); return;
+  }
+  state.highlight = state.highlight === sym ? null : sym;
+  drawChart(); renderTable();
+});
+document.querySelectorAll('th button[data-sort]').forEach(b => b.addEventListener('click', () => {
+  const k = b.dataset.sort;
+  if (state.sort.key === k) { if (state.sort.dir === 1) state.sort.dir = -1; else state.sort = { key: null, dir: 1 }; }
+  else state.sort = { key: k, dir: (k === 'sym' || k === 'name' || k === 'quad') ? 1 : -1 };
+  renderTable();
+}));
+$('#showAll').addEventListener('click', () => { group().hidden = []; save(); drawChart(); renderTable(); });
+$('#hideAll').addEventListener('click', () => { group().hidden = [...group().symbols]; save(); drawChart(); renderTable(); });
+
+// add symbols + suggestions
+let sugg = [], suggIdx = -1, suggTimer = null, suggToken = 0;
+const addInp = $('#addSym'), suggEl = $('#sugg');
+function closeSugg() { suggEl.hidden = true; addInp.setAttribute('aria-expanded', 'false'); suggIdx = -1; }
+function renderSugg(note) {
+  if (!sugg.length && !note) { closeSugg(); return; }
+  suggEl.innerHTML = sugg.map((s, i) => `<li role="option" id="sg${i}" data-i="${i}" aria-selected="${i === suggIdx}">
+      <span class="s-t">${esc(tick(s.symbol))}</span><span class="s-d">${esc(s.description || '')}</span><span class="s-x">${esc(s.exchange || '')}</span></li>`).join('')
+    + (note ? `<li class="s-note" role="presentation">${esc(note)}</li>` : '');
+  suggEl.hidden = false; addInp.setAttribute('aria-expanded', 'true');
+  addInp.setAttribute('aria-activedescendant', suggIdx >= 0 ? `sg${suggIdx}` : '');
+}
+function lookup(q) {
+  const meta = DATA.meta;
+  if (!meta) { sugg = []; renderSugg('Prices are still loading.'); return; }
+  const Q = q.trim().toUpperCase().replace(/\s+/g, ''), words = q.trim().toLowerCase().split(/\s+/).filter(Boolean);
+  const score = (x) => {
+    const t = x.symbol, n = x.description.toLowerCase();
+    if (t === Q) return 0;
+    if (t.startsWith(Q)) return 1;
+    if (words.length && words.every(w => n.includes(w))) return 2;
+    if (Q.length > 1 && t.includes(Q)) return 3;
+    return 9;
+  };
+  sugg = Object.entries(meta.symbols || {})
+    .filter(([, r]) => r && r.status !== 'failed')
+    .map(([s, r]) => ({ symbol: s, description: NAMES[s] || r.name || '', exchange: '' }))
+    .map(x => [score(x), x]).filter(([sc]) => sc < 9)
+    .sort((a, b) => a[0] - b[0] || a[1].symbol.localeCompare(b[1].symbol))
+    .slice(0, 8).map(([, x]) => x);
+  suggIdx = sugg.length ? 0 : -1;
+  renderSugg(sugg.length ? '' : 'Not in the price list. Press Enter to add it anyway; the app then shows how to add it to the list.');
+}
+addInp.addEventListener('input', () => {
+  const q = addInp.value.trim();
+  clearTimeout(suggTimer);
+  if (!q || q.includes(',')) { sugg = []; closeSugg(); return; }
+  suggTimer = setTimeout(() => lookup(q), 120);
+});
+addInp.addEventListener('keydown', (e) => {
+  if (e.key === 'ArrowDown' && sugg.length) { e.preventDefault(); suggIdx = (suggIdx + 1) % sugg.length; renderSugg(); return; }
+  if (e.key === 'ArrowUp' && sugg.length) { e.preventDefault(); suggIdx = (suggIdx - 1 + sugg.length) % sugg.length; renderSugg(); return; }
+  if (e.key === 'Escape') { closeSugg(); return; }
+  if (e.key === 'Enter') {
+    e.preventDefault();
+    const typed = addInp.value.trim();
+    if (!typed) return;
+    if (typed.includes(',')) { addSymbols(typed.split(',').map(t => t.trim()).filter(Boolean).map(t => ({ symbol: t }))); return; }
+    const upper = typed.toUpperCase().replace(/\s+/g, '');
+    if (!suggEl.hidden && sugg.length) {
+      // a typed ticker that matches a suggestion wins; otherwise take the highlighted suggestion
+      const exactHit = sugg.find(s => tick(String(s.symbol)) === upper || String(s.symbol) === upper);
+      const pick = exactHit || (suggIdx >= 0 ? sugg[suggIdx] : null);
+      if (pick) { addSymbols([pick]); return; }
+    }
+    if (/\s/.test(typed)) { lookup(typed); return; }
+    addSymbols([{ symbol: typed }]);
+  }
+});
+addInp.addEventListener('blur', () => setTimeout(closeSugg, 150));
+suggEl.addEventListener('mousedown', (e) => {
+  const li = e.target.closest('li[data-i]'); if (!li) return;
+  e.preventDefault();
+  addSymbols([sugg[+li.dataset.i]]);
+});
+function addSymbols(items) {
+  const g = group(); const added = []; let full = false;
+  for (const it of items) {
+    const sym = normSym(it.symbol); if (!sym) continue;
+    if (g.symbols.some(s => sameSym(s, sym)) || sameSym(sym, g.benchmark)) continue;
+    if (g.symbols.length >= MAX_SYMBOLS) { full = true; break; }
+    g.symbols.push(sym); added.push(sym);
+    if (it.description && !NAMES[tick(sym)]) state.names[sym] = String(it.description).slice(0, 80);
+  }
+  addInp.value = ''; sugg = []; closeSugg();
+  save();
+  if (full) { state.page = { kind: 'warn', code: 'full', text: `A group holds up to ${MAX_SYMBOLS} symbols. Remove one to add another.` }; renderBanner(); }
+  if (!added.length) return;
+  rebuild(true);
+  loadLive();
+}
+
+// keyboard stepping on the chart area
+document.addEventListener('keydown', (e) => {
+  if (e.target.closest('input, select, textarea, button')) return;
+  if (e.key === 'ArrowLeft') { stopPlay(); setEnd(state.end - 1); }
+  if (e.key === 'ArrowRight') { stopPlay(); setEnd(state.end + 1); }
+});
+let rz = null;
+new ResizeObserver(() => { cancelAnimationFrame(rz); rz = requestAnimationFrame(() => state.model && drawChart()); }).observe($('#chartWrap'));
+
+/* ───────────────────────── boot ───────────────────────── */
+if (TICKERS_URL) {
+  const ref = $('#tickersRef');
+  ref.innerHTML = `<a href="${esc(TICKERS_URL)}" target="_blank" rel="noopener">tickers.txt in the app’s GitHub project</a>`;
+}
+rebuild();
+loadLive();
+window.addEventListener('online', () => loadLive(true));
+window.addEventListener('offline', renderStatus);
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState !== 'visible') return;
+  if (DATA.loadedAt && Date.now() - DATA.loadedAt > 10 * 60000) loadLive(true); else renderStatus();
+});
+if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) navigator.serviceWorker.register('sw.js').catch(() => {});
+})();
+</script>
+</body>
+</html>

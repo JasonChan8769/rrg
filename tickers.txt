@@ -1,0 +1,6 @@
+# Extra tickers for the RRG app, one per line, in Yahoo Finance format.
+# The built-in list (about 115 ETFs) is in scripts/universe.json; you only need to add others here.
+# Examples:  NVDA    0700.HK    9988.HK    BTC-USD    ^HSI
+# Save the file and the app picks them up a few minutes later (press Refresh in the app).
+# Lines starting with # are ignored.
+

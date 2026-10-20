@@ -1,0 +1,16 @@
+{
+  "name": "RRG · Relative Rotation Graph",
+  "short_name": "RRG",
+  "description": "Relative Rotation Graph for sector, industry and country ETFs, with playback.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#f2f4f7",
+  "theme_color": "#17212d",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
